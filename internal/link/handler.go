@@ -53,6 +53,12 @@ func (handler *LinkHandler) Delete() http.HandlerFunc {
 }
 func (handler *LinkHandler) GoTo() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-
+		hash := request.PathValue("hash")
+		link, err := handler.LinkRepository.GetByHash(hash)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Redirect(writer, request, link.Url, http.StatusTemporaryRedirect)
 	}
 }
