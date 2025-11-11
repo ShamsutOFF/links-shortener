@@ -2,9 +2,11 @@ package link
 
 import (
 	"fmt"
+	"gorm.io/gorm"
 	"links-shortener/pkg/req"
 	"links-shortener/pkg/res"
 	"net/http"
+	"strconv"
 )
 
 type LinkHandlerDeps struct {
@@ -32,6 +34,15 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 			return
 		}
 		link := NewLink(body.Url)
+
+		for {
+			existedLink, _ := handler.LinkRepository.GetByHash(link.Hash)
+			if existedLink == nil {
+				break
+			}
+			link.GenerateHash()
+		}
+
 		createdLink, err := handler.LinkRepository.Create(link)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -42,7 +53,24 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 }
 func (handler *LinkHandler) Update() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-
+		body, err := req.HandleBody[LinkUpdateRequest](&writer, request)
+		if err != nil {
+			return
+		}
+		idString := request.PathValue("id")
+		id, err := strconv.ParseUint(idString, 10, 32)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
+		link, err := handler.LinkRepository.Update(&Link{
+			Model: gorm.Model{ID: uint(id)},
+			Url:   body.Url,
+			Hash:  body.Hash,
+		})
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+		}
+		res.JsonResp(writer, link, http.StatusOK)
 	}
 }
 func (handler *LinkHandler) Delete() http.HandlerFunc {
