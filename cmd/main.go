@@ -4,15 +4,24 @@ import (
 	"fmt"
 	"links-shortener/configs"
 	"links-shortener/internal/auth"
+	"links-shortener/internal/link"
 	"links-shortener/pkg/db"
 	"net/http"
 )
 
 func main() {
 	conf := configs.LoadConfig()
-	_ = db.NewDb(conf)
+	newDb := db.NewDb(conf)
 	router := http.NewServeMux()
+
+	// Repositories
+	linkRepository := link.NewLinkRepository(newDb)
+
+	// Handlers
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{Config: conf})
+	link.NewLinkHandler(router, link.LinkHandlerDeps{
+		LinkRepository: linkRepository,
+	})
 
 	server := http.Server{
 		Addr:    ":7777",
