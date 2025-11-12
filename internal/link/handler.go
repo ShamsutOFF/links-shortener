@@ -50,6 +50,7 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 		res.JsonResp(writer, createdLink, http.StatusCreated)
 	}
 }
+
 func (handler *LinkHandler) Update() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		body, err := req.HandleBody[LinkUpdateRequest](&writer, request)
@@ -74,6 +75,7 @@ func (handler *LinkHandler) Update() http.HandlerFunc {
 		res.JsonResp(writer, link, http.StatusOK)
 	}
 }
+
 func (handler *LinkHandler) Delete() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		idString := request.PathValue("id")
@@ -95,6 +97,7 @@ func (handler *LinkHandler) Delete() http.HandlerFunc {
 		res.JsonResp(writer, nil, http.StatusOK)
 	}
 }
+
 func (handler *LinkHandler) GoTo() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		hash := request.PathValue("hash")

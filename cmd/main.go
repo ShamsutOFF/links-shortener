@@ -6,6 +6,7 @@ import (
 	"links-shortener/internal/auth"
 	"links-shortener/internal/link"
 	"links-shortener/pkg/db"
+	"links-shortener/pkg/middleware"
 	"net/http"
 )
 
@@ -25,7 +26,7 @@ func main() {
 
 	server := http.Server{
 		Addr:    ":7777",
-		Handler: router,
+		Handler: middleware.CORS(middleware.Logging(router)),
 	}
 
 	fmt.Println("Server listening on port 7777")
