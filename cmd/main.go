@@ -24,9 +24,14 @@ func main() {
 		LinkRepository: linkRepository,
 	})
 
+	// Middlewares
+	stack := middleware.Chain(
+		middleware.CORS,
+		middleware.Logging,
+	)
 	server := http.Server{
 		Addr:    ":7777",
-		Handler: middleware.CORS(middleware.Logging(router)),
+		Handler: stack(router),
 	}
 
 	fmt.Println("Server listening on port 7777")
