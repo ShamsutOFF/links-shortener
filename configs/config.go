@@ -26,6 +26,6 @@ func LoadConfig() *Config {
 	}
 	return &Config{
 		Db:   DbConfig{Dsn: os.Getenv("DSN")},
-		Auth: AuthConfig{Secret: os.Getenv("TOKEN")},
+		Auth: AuthConfig{Secret: os.Getenv("SECRET")},
 	}
 }
