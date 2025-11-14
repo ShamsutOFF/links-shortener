@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"links-shortener/pkg/req"
 	"net/http"
 
@@ -30,16 +29,15 @@ func NewAuthHandler(router *http.ServeMux, deps AuthHandlerDeps) {
 
 func (handler *AuthHandler) Login() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Println("Login()")
 		body, err := req.HandleBody[LoginRequest](&writer, request)
 		if err != nil {
 			return
 		}
-		fmt.Println(body)
-		data := LoginResponse{
-			Token: "123",
+		login, err := handler.AuthService.Login(body.Email, body.Password)
+		if err != nil {
+			http.Error(writer, ErrWrongCredentials, http.StatusUnauthorized)
 		}
-		res.JsonResp(writer, data, http.StatusOK)
+		res.JsonResp(writer, login, http.StatusOK)
 	}
 }
 
@@ -49,6 +47,11 @@ func (handler *AuthHandler) Register() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		handler.AuthService.Register(body.Email, body.Password, body.Name)
+		register, err := handler.AuthService.Register(body.Email, body.Password, body.Name)
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		res.JsonResp(writer, register, http.StatusOK)
 	}
 }
