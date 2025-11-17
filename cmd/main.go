@@ -5,6 +5,7 @@ import (
 	"links-shortener/configs"
 	"links-shortener/internal/auth"
 	"links-shortener/internal/link"
+	"links-shortener/internal/stat"
 	"links-shortener/internal/user"
 	"links-shortener/pkg/db"
 	"links-shortener/pkg/middleware"
@@ -19,6 +20,7 @@ func main() {
 	// Repositories
 	linkRepository := link.NewLinkRepository(newDb)
 	userRepository := user.NewUserRepository(newDb)
+	statRepository := stat.NewStatRepository(newDb)
 
 	// Services
 	authService := auth.NewAuthService(userRepository)
@@ -30,6 +32,7 @@ func main() {
 	})
 	link.NewLinkHandler(router, link.LinkHandlerDeps{
 		LinkRepository: linkRepository,
+		StatRepository: statRepository,
 		Config:         conf,
 	})
 
