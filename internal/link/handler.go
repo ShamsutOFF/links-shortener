@@ -1,7 +1,9 @@
 package link
 
 import (
+	"fmt"
 	"gorm.io/gorm"
+	"links-shortener/configs"
 	"links-shortener/pkg/middleware"
 	"links-shortener/pkg/req"
 	"links-shortener/pkg/res"
@@ -11,6 +13,7 @@ import (
 
 type LinkHandlerDeps struct {
 	LinkRepository *LinkRepository
+	Config         *configs.Config
 }
 
 type LinkHandler struct {
@@ -23,7 +26,7 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	}
 	router.HandleFunc("POST /link", handler.Create())
 	router.Handle("PATCH /link/{id}",
-		middleware.IsAuthenticated(handler.Update()))
+		middleware.IsAuthenticated(handler.Update(), deps.Config))
 	router.HandleFunc("DELETE /link/{id}", handler.Delete())
 	router.HandleFunc("GET /{hash}", handler.GoTo())
 }
@@ -55,6 +58,10 @@ func (handler *LinkHandler) Create() http.HandlerFunc {
 
 func (handler *LinkHandler) Update() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
+		email, ok := request.Context().Value(middleware.ContextEmailKey).(string)
+		if ok {
+			fmt.Println("@@@ ", email)
+		}
 		body, err := req.HandleBody[LinkUpdateRequest](&writer, request)
 		if err != nil {
 			return

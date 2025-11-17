@@ -1,20 +1,39 @@
 package middleware
 
 import (
-	"log"
+	"context"
+	"links-shortener/configs"
+	"links-shortener/pkg/jwt"
 	"net/http"
 	"strings"
 )
 
-func IsAuthenticated(next http.Handler) http.Handler {
+type key string
+
+const (
+	ContextEmailKey key = "ContextEmailKey"
+)
+
+func writeUnauthorized(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusUnauthorized)
+	w.Write([]byte(http.StatusText(http.StatusUnauthorized)))
+}
+
+func IsAuthenticated(next http.Handler, config *configs.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
-		token := strings.TrimPrefix(header, "Bearer ")
-		if token == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		if !strings.HasPrefix(header, "Bearer ") {
+			writeUnauthorized(w)
 			return
 		}
-		log.Println("@@@ Token: ", token)
-		next.ServeHTTP(w, r)
+		token := strings.TrimPrefix(header, "Bearer ")
+		isValid, data := jwt.NewJWT(config.Auth.Secret).Parse(token)
+		if !isValid {
+			writeUnauthorized(w)
+			return
+		}
+		ctx := context.WithValue(r.Context(), ContextEmailKey, data.Email)
+		req := r.WithContext(ctx)
+		next.ServeHTTP(w, req)
 	})
 }
