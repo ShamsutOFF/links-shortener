@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"links-shortener/configs"
-	"links-shortener/pkg/di"
+	"links-shortener/pkg/event"
 	"links-shortener/pkg/middleware"
 	"links-shortener/pkg/req"
 	"links-shortener/pkg/res"
@@ -14,19 +14,19 @@ import (
 
 type LinkHandlerDeps struct {
 	LinkRepository *LinkRepository
-	StatRepository di.IStatRepository
 	Config         *configs.Config
+	EventBus       *event.EventBus
 }
 
 type LinkHandler struct {
 	LinkRepository *LinkRepository
-	StatRepository di.IStatRepository
+	EventBus       *event.EventBus
 }
 
 func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 	handler := &LinkHandler{
 		LinkRepository: deps.LinkRepository,
-		StatRepository: deps.StatRepository,
+		EventBus:       deps.EventBus,
 	}
 	router.HandleFunc("POST /link", handler.Create())
 	router.Handle("PATCH /link/{id}",
@@ -122,7 +122,10 @@ func (handler *LinkHandler) GoTo() http.HandlerFunc {
 			http.Error(writer, err.Error(), http.StatusNotFound)
 			return
 		}
-		handler.StatRepository.AddClick(link.ID)
+		go handler.EventBus.Publish(event.Event{
+			Type: event.EventLinkVisited,
+			Data: link.ID,
+		})
 		http.Redirect(writer, request, link.Url, http.StatusTemporaryRedirect)
 	}
 }

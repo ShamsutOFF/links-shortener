@@ -8,6 +8,7 @@ import (
 	"links-shortener/internal/stat"
 	"links-shortener/internal/user"
 	"links-shortener/pkg/db"
+	"links-shortener/pkg/event"
 	"links-shortener/pkg/middleware"
 	"net/http"
 )
@@ -16,6 +17,7 @@ func main() {
 	conf := configs.LoadConfig()
 	newDb := db.NewDb(conf)
 	router := http.NewServeMux()
+	eventBus := event.NewEventBus()
 
 	// Repositories
 	linkRepository := link.NewLinkRepository(newDb)
@@ -24,6 +26,10 @@ func main() {
 
 	// Services
 	authService := auth.NewAuthService(userRepository)
+	statService := stat.NewStatService(stat.StatServiceDeps{
+		EventBus:       eventBus,
+		StatRepository: statRepository,
+	})
 
 	// Handlers
 	auth.NewAuthHandler(router, auth.AuthHandlerDeps{
@@ -32,9 +38,15 @@ func main() {
 	})
 	link.NewLinkHandler(router, link.LinkHandlerDeps{
 		LinkRepository: linkRepository,
+		Config:         conf,
+		EventBus:       eventBus,
+	})
+	stat.NewStatHandler(router, stat.StatHandlerDeps{
 		StatRepository: statRepository,
 		Config:         conf,
 	})
+
+	go statService.AddClick()
 
 	// Middlewares
 	stack := middleware.Chain(
