@@ -13,7 +13,7 @@ import (
 	"net/http"
 )
 
-func main() {
+func App() http.Handler {
 	conf := configs.LoadConfig()
 	newDb := db.NewDb(conf)
 	router := http.NewServeMux()
@@ -53,9 +53,14 @@ func main() {
 		middleware.CORS,
 		middleware.Logging,
 	)
+	return stack(router)
+}
+
+func main() {
+	app := App()
 	server := http.Server{
 		Addr:    ":7777",
-		Handler: stack(router),
+		Handler: app,
 	}
 
 	fmt.Println("Server listening on port 7777")
