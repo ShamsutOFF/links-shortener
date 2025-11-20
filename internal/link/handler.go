@@ -28,12 +28,14 @@ func NewLinkHandler(router *http.ServeMux, deps LinkHandlerDeps) {
 		LinkRepository: deps.LinkRepository,
 		EventBus:       deps.EventBus,
 	}
-	router.HandleFunc("POST /link", handler.Create())
+	router.Handle("POST /link",
+		middleware.IsAuthenticated(handler.Create(), deps.Config))
 	router.Handle("PATCH /link/{id}",
 		middleware.IsAuthenticated(handler.Update(), deps.Config))
-	router.HandleFunc("DELETE /link/{id}", handler.Delete())
-	router.HandleFunc("GET /{hash}", handler.GoTo())
-
+	router.Handle("DELETE /link/{id}",
+		middleware.IsAuthenticated(handler.Delete(), deps.Config))
+	router.Handle("GET /{hash}",
+		middleware.IsAuthenticated(handler.GoTo(), deps.Config))
 	router.Handle("GET /link",
 		middleware.IsAuthenticated(handler.GetAll(), deps.Config))
 }
